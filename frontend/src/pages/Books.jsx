@@ -1,0 +1,16 @@
+import { useEffect, useState } from "react";
+import { Plus, Search, Trash2, BookOpen } from "lucide-react";
+import api from "../services/api";
+export default function Books(){
+ const [items,setItems]=useState([]),[search,setSearch]=useState(""),[form,setForm]=useState({title:"",author:"",isbn:"",category:"Computer Science",totalCopies:1}),[error,setError]=useState("");
+ const load=()=>api.get("/books").then(r=>setItems(r.data)).catch(e=>setError(e.response?.data?.message||"Unable to load books."));
+ useEffect(()=>{load();},[]);
+ const change=e=>setForm({...form,[e.target.name]:e.target.value});
+ async function add(e){e.preventDefault();setError("");try{await api.post("/books",form);setForm({title:"",author:"",isbn:"",category:"Computer Science",totalCopies:1});load();}catch(e){setError(e.response?.data?.message||"Could not add book.");}}
+ async function remove(id){if(!confirm("Delete this book record?"))return;try{await api.delete(`/books/${id}`);load();}catch(e){setError(e.response?.data?.message||"Could not delete book.");}}
+ const filtered=items.filter(b=>`${b.title} ${b.author} ${b.isbn}`.toLowerCase().includes(search.toLowerCase()));
+ return <><div className="page-heading"><div><span className="eyebrow">COLLECTION</span><h1>Books</h1><p>Build and maintain your library collection.</p></div><div className="heading-count">{items.length} titles in catalogue</div></div>{error&&<div className="error-message">{error}</div>}
+ <div className="panel form-panel"><div className="panel-heading"><div><h3><Plus size={17}/> Add new book</h3><p>Enter the book details below.</p></div></div><form className="inline-form" onSubmit={add}><label>Book title<input name="title" value={form.title} onChange={change} required placeholder="e.g. Introduction to Algorithms"/></label><label>Author<input name="author" value={form.author} onChange={change} required placeholder="Author name"/></label><label>ISBN<input name="isbn" value={form.isbn} onChange={change} placeholder="ISBN number"/></label><label>Category<input name="category" value={form.category} onChange={change} placeholder="Category"/></label><label>Copies<input name="totalCopies" type="number" min="1" value={form.totalCopies} onChange={change} required/></label><button className="primary-button"><Plus size={16}/> Add book</button></form></div>
+ <div className="panel"><div className="panel-heading"><div><h3>Book catalogue</h3><p>All registered books and availability.</p></div><div className="search-box"><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search books..."/></div></div>
+ {filtered.length===0?<div className="empty-state"><BookOpen size={28}/><b>No books found</b><span>Add a book or adjust your search.</span></div>:<div className="table-wrap"><table><thead><tr><th>BOOK TITLE</th><th>AUTHOR</th><th>ISBN</th><th>CATEGORY</th><th>AVAILABLE</th><th></th></tr></thead><tbody>{filtered.map(b=><tr key={b._id}><td><b>{b.title}</b></td><td>{b.author}</td><td>{b.isbn||"—"}</td><td>{b.category}</td><td><span className="availability">{b.availableCopies} / {b.totalCopies}</span></td><td><button className="icon-button danger" title="Delete book" onClick={()=>remove(b._id)}><Trash2 size={16}/></button></td></tr>)}</tbody></table></div>}</div></>;
+}

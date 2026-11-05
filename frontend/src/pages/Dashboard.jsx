@@ -1,0 +1,15 @@
+import { useEffect, useState } from "react";
+import { BookOpen, Users, BookCopy, Clock3, ArrowUpRight, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
+import api from "../services/api";
+export default function Dashboard() {
+  const [books,setBooks]=useState([]),[students,setStudents]=useState([]),[issues,setIssues]=useState([]),[error,setError]=useState("");
+  useEffect(()=>{ Promise.all([api.get("/books"),api.get("/students"),api.get("/issues")]).then(([b,s,i])=>{setBooks(b.data);setStudents(s.data);setIssues(i.data);}).catch(e=>setError(e.response?.data?.message||"Could not load dashboard data.")); },[]);
+  const active=issues.filter(i=>i.status==="Issued");
+  const stats=[["Total books",books.reduce((n,b)=>n+b.totalCopies,0),BookOpen,"#e8efff"],["Registered students",students.length,Users,"#e7f6ef"],["Books issued",active.length,BookCopy,"#fff2df"],["Available titles",books.filter(b=>b.availableCopies>0).length,Clock3,"#f2eaff"]];
+  return <><div className="page-heading"><div><span className="eyebrow">OVERVIEW</span><h1>Dashboard</h1><p>Here’s what’s happening in your library today.</p></div><Link className="primary-button" to="/books"><Plus size={17}/> Add a book</Link></div>
+  {error&&<div className="error-message">{error}</div>}<div className="stats-grid">{stats.map(([label,value,Icon,bg])=><div className="stat-card" key={label}><div className="stat-top"><span>{label}</span><div className="stat-icon" style={{background:bg}}><Icon size={19}/></div></div><strong>{value}</strong><small>Current records</small></div>)}</div>
+  <div className="content-grid"><div className="panel"><div className="panel-heading"><div><h3>Recent book issues</h3><p>Latest circulation activity</p></div><Link to="/issues">View all <ArrowUpRight size={15}/></Link></div>
+  {issues.length===0?<div className="empty-state"><BookCopy size={28}/><b>No issue records yet</b><span>Issued books will appear here.</span></div>:<div className="table-wrap"><table><thead><tr><th>BOOK</th><th>STUDENT</th><th>DUE DATE</th><th>STATUS</th></tr></thead><tbody>{issues.slice(0,5).map(i=><tr key={i._id}><td><b>{i.book?.title||"Deleted book"}</b></td><td>{i.student?.name||"Deleted student"}</td><td>{new Date(i.dueDate).toLocaleDateString()}</td><td><span className={`status ${i.status==="Returned"?"returned":"issued"}`}>{i.status}</span></td></tr>)}</tbody></table></div>}</div>
+  <div className="panel quick-panel"><h3>Quick actions</h3><p>Common library tasks</p><Link to="/books" className="quick-action"><span className="quick-icon blue"><BookOpen size={18}/></span><span><b>Manage books</b><small>Add or update book records</small></span><ArrowUpRight size={16}/></Link><Link to="/students" className="quick-action"><span className="quick-icon green"><Users size={18}/></span><span><b>Manage students</b><small>Maintain student directory</small></span><ArrowUpRight size={16}/></Link><Link to="/issues" className="quick-action"><span className="quick-icon amber"><BookCopy size={18}/></span><span><b>Issue a book</b><small>Manage issue and return records</small></span><ArrowUpRight size={16}/></Link></div></div></>;
+}

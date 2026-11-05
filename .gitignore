@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment variables (protect credentials)
+.env
+.env.*
+!.env.example
+
+# Production builds
+dist/
+build/
+
+# Logs & temp files
+*.log
+.DS_Store
+Thumbs.db
+
